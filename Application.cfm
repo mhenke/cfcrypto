@@ -1,0 +1,1 @@
+<cfapplication sessionmanagement="yes" clientmanagement="yes" name="cfcrypto">

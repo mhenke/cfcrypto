@@ -18,7 +18,7 @@ because 'i' don't use that.
 
 <cfsetting enablecfoutputonly="yes">
 <cfscript>
- local.queryName = '';
+ local.queryName = 'users';
  local.raw = '';
  local.q = chr(0);
 

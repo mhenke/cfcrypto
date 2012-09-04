@@ -1,9 +1,38 @@
+<!--- 
+	def login
+		@title = "Mail Administration Login"
+	
+		if request.post?
+			account = MailAccount.with_address(request[:username])
+			success = false
+		
+			if account
+				Ramaze::Log.info "Authenticating account #{account.name}..."
+
+				if request[:password_hash]
+					Ramaze::Log.info "\twith #{request[:password_hash]} and #{session[:login_salt]}"
+					success = account.digest_authenticate(request[:password_hash], session[:login_salt])
+				elsif request[:password]
+					Ramaze::Log.info "\twith #{request[:password]}"
+					success = account.plaintext_authenticate(request[:password])
+				end
+			end
+		
+			if success
+				Ramaze::Log.info "Authentication successful!"
+				session[:mail_account] = account.id
+				redirect MainController.r(:index)
+			end
+		
+			Ramaze::Log.warn "Authentication failed!"
+		end
+	end 
+--->
+
 	<style>body{font-family:courier new}</style>
 	<cfparam name="form.username" default="" />
 	<cfparam name="form.password" default="" />
 	<cfset setUpUsers() />
-
-
 
 <!--------------------------------------------------------------------------------
                         //Begin
@@ -13,29 +42,44 @@
 	<cfset crypto = createObject('component' ,'Crypto') />
 	<!---// Get user password hash and salt from db --->
 	<cfset  user = getUserHash(form.username) />
-	<!---//Hash what was entered in the form using the salt from the target user: --->
-	<cfset  formPasswordHash = crypto.computeHash(form.password,user.salt) />
-
+	
 	<div align="center">
-    <!---
-      Onec we have the password hash from the db and the hash from the
-      password entered by the user, we simply compare the 2 strings.
-     --->
-	<cfif formPasswordHash.equals(user.password_hash)>
-	  <strong>Valid User!</strong>
-	 <cfelse>
-	  <strong style="color:darkred">Invalid User</strong>
+		
+		<cfif not isdefined("form.PASSWORD_HASH")>
+			<!---// Form 1: Hash what was entered in the form using the salt from the target user: --->
+			<cfset formPasswordHash = crypto.computeHash(password=form.password,salt=user.salt,iterations=1024) />
+			<cfset ourPasswordHash = user.password_hash>
+		<cfelse>
+			<!---//Form 2: Hash what was entered in the form using the salt from the target user: --->
+			<cfset formPasswordHash = form.PASSWORD_HASH />
+			<cfset ourPasswordHash = crypto.computeHash( 
+										password=crypto.computeHash( password=user.password,algorithm='SHA-1' ),
+										salt= session.login_salt,
+										algorithm='SHA-1')>
+		</cfif>
+		
+	    <!--- FORM EXAMPLE
+	      Onec we have the password hash from the db and the hash from the
+	      password entered by the user, we simply compare the 2 strings.
+	     --->
+		<cfif formPasswordHash.equals(ourPasswordHash)>
+		  <strong>Valid User!</strong>
+		 <cfelse>
+		  <strong style="color:darkred">Invalid User</strong>
+		</cfif>
+	
+	<cfif not isdefined("form.PASSWORD_HASH")>
+		<p><a href="LoginForm.cfm">Try Another?</a></p>
+	<cfelse>
+		<p><a href="LoginForm2.cfm">Try Another?</a></p>
 	</cfif>
-
-	<p><a href="LoginForm.cfm">Try Another?</a></p>
+	
     <p><a href="AddUserForm.cfm">Try Add User Example?</a></p>
-
   </div>
 
 <!--------------------------------------------------------------------------------
                          //End
  --------------------------------------------------------------------------------->
-
 
 <p><hr size="1" noshade="true" /></p>
 <h4 align="center">Debug Info</h4>
@@ -44,12 +88,10 @@
 
 <pre>
 <cfoutput>
- <strong>formPasswordHash</strong>:    #formPasswordHash#<br />
- <strong>user.password_hash</strong>:  #user.password_hash#<br />
+ <strong>formPasswordHash</strong>: #formPasswordHash#<br />
+ <strong>ourPasswordHash</strong>:  #ourPasswordHash#<br />
 </cfoutput>
 </pre>
-
-
 
  <p>Example data. Normally this would be in a database or other persisted store.</p>
 
@@ -57,23 +99,22 @@
 <cf_querysim>
 users
 id,username,password,password_hash,salt
-1|admin|password|9280E149198775259E57FE06022F3CFAE96A9F2FC99474F7864ABDCB34CED5A82C94B171116465BA4DD542B72E51AB045EE64764862014D2E4AD689A3CC7D8EF|N6lUg9fdHQsY8A8iJTPygA==
-2|jenjen|iloveyou|60EA0B2C9CEE5C8A35C77F80664C30C724084C9D8ED443AF67CC4C5B61B18412D1748066522968AB7860BCC1EEA5E9C41E00FD26A9955D524EDBDF80F7D14F5C|BcNP/J3Y91a9+daj9DrFkQ==
-3|blinky|miss4you|22F3D42932E5C660DCDA4582C9949CD63212BF91085B2CDF49A7A7372B4783985F7797628FEB587108D16D945785FFF1FF3E5955F0FCD848E1DDB807E9256487|lCw/0pHTWQgG2ULj6FxhqA==
-4|fabfive|password19|2D37303ACE295381AC25B28C0767F9FB164F3737394FBC485F9D5D9F1A988C8BE58574917AADB25C243B8723044081220BC421023B5CFF6EEC4E740C9DC46453|UTskcZLgCFk/BML6uJKwvA==
-5|bushman|ganja|8C87DB1EE408F76036D25FB85ED94D8F4AE0925584BBEFFBEAF833A1C46BDFCD326EDDFF861347E6C4BC80F400107794B743F8EDCCC1E7D2EFCCEC0322BBC7BA|hUIO43NZfAT62EsiByHBWg==
-6|rastapasta|phuckyou|628C48574DF8740FF9AF0288549863A581056737F06BB8A1BC47242C8166C4FC35E1885F1201F731DE410AC5597AE35FA67909C7A4091D914457FF99ECB382F5|eAYWfcEw+X4ky3KnPAt16Q==
-7|belladonna|tink69|38DCE80C702402326C71E0CFD85A88DE98F09F5888FAC9FD40FF49EE6A29FED11F8B0752A57DDE368ADFBCF699F740001C9F08A9AD4D67BAC6E201F1CC5C03B9|SX01/9fMu0+nJmlSGGjeag==
+1|admin|password|f5e2dd38088bced1d485e167c3a6b3967a9b20eda6aaba7fa48df0c7a04ff14fed98991a53fb15c57e40a4338336bd40933c93a3eaad630114df40b79ad55f49|N6lUg9fdHQsY8A8iJTPygA==
+2|jenjen|iloveyou|ddadeb0281ccc6af81363582913b1558ab5accc06d8d762e97ecf31143fbfce3ae98290d3ddce00f2873024d1095532d3815c491c52187a1737f85cc4cda761b|BcNP/J3Y91a9+daj9DrFkQ==
+3|blinky|miss4you|8d7c659faf50bdbe942ea9a19e141ad2c44f4aefbf8048f3ca98a300f1b7fbc6022fb8fb5d8cbab63024e18907023eb957fde5ff7a2b3f3f7fad906ae4237e22|lCw/0pHTWQgG2ULj6FxhqA==
+4|fabfive|password19|bbc94c1505b020544ec58cadbc64831d2b794cf314b5784b752c25e33c4b3a57472b67049808b055ca43ba2f9e9d2e8cbd5371380bc907896eb9ecc1cbc49430|UTskcZLgCFk/BML6uJKwvA==
+5|bushman|ganja|81f3c703bbb6d1148ec71f52e8d6a29555c0e496a79752227d64fa9254168f520adf42f0b802c6cf364c82b423bafb6df922b0d7ccb6f7e8a8074e2b721a4b7f|hUIO43NZfAT62EsiByHBWg==
+6|rastapasta|phuckyou|a31312c5c4c9c7249b497f32fdb3c645e8fbaca0c82ea6ede9cf9c30834f21e478f55596cb8f63e13bafb419452e83e2768eab649e1e8cdb084744ec638221fe|eAYWfcEw+X4ky3KnPAt16Q==
+7|belladonna|tink69|5ec7464102b5b75846c52be7d4fad00cd9808cd88793ae83f272c219f0c0f30af909fac1b46f2ec5b79d564d040cdfe1a4066ce3936e952dced5bdcabe3fc1af|SX01/9fMu0+nJmlSGGjeag==
 </cf_querysim>
 </cffunction>
-
 
 <cfdump var="#users#" label="list of example users.">
 
 <cffunction name="getUserHash">
   <cfargument name="username">
   <cfquery name="q" dbtype="query" maxrows="1">
-    select password_hash,salt from users where username=<cfqueryparam cfsqltype="cf_sql_varchar" maxlength="24" value="#arguments.username#" />
+    select password_hash,salt,password from users where username=<cfqueryparam cfsqltype="cf_sql_varchar" maxlength="24" value="#arguments.username#" />
   </cfquery>
   <cfreturn q />
 </cffunction>
@@ -82,13 +123,13 @@ id,username,password,password_hash,salt
 --->
 <!--- Util to populate query above --->
 <cffunction name="saltyHash">
-  <cfset var salt = ''>
-<textarea cols="200" rows="16">
-<cfoutput query="users">
- <cfset salt = crypto.genSalt() />
- #id#|#username#|#password#|#crypto.computeHash(password,salt)#|#salt##chr(10)#
- </cfoutput>
-</textarea>
+  	<cfset var salt = ''>
+	<textarea cols="200" rows="16">
+	<cfoutput query="users">
+	 	<cfset salt = crypto.genSalt() />
+	 	#id#|#username#|#password#|#crypto.computeHash(password=password,salt=salt,iterations=1024)#|#salt##chr(10)#
+	 </cfoutput>
+	</textarea>
 </cffunction>
 
 

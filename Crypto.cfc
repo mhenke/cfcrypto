@@ -4,19 +4,22 @@
   <cfreturn this />
 </cffunction>
 
-
 <cffunction name="computeHash" access="public" returntype="String">
   <cfargument name="password" type="string" />
-  <cfargument name="salt" type="string" />
-  <cfargument name="iterations" type="numeric" required="false" default="1024" />
+  <cfargument name="salt" type="string" required="false" default=""/>
+  <cfargument name="iterations" type="numeric" required="false" default="0" />
   <cfargument name="algorithm" type="string" required="false" default="SHA-512" />
   <cfscript>
     var hashed = '';
     var i = 1;
-    hashed = hash( password & salt, arguments.algorithm, 'UTF-8' );
-    for (i = 1; i <= iterations; i++) {
-      hashed = hash( hashed & salt , arguments.algorithm, 'UTF-8' );
+    hashed = lcase( hash( password & salt, arguments.algorithm, 'UTF-8' ) );
+   
+    if (iterations GT 0) {
+	    for (i = 1; i <= iterations; i++) {
+	      hashed =  lcase( hash( hashed & salt , arguments.algorithm, 'UTF-8' ) );
+	    }
     }
+    // lowercase to standardize with other languages
     return hashed;
   </cfscript>
 </cffunction>
@@ -44,7 +47,6 @@
   </cfscript>
 </cffunction>
 
-
 <cffunction name="genSalt" access="public" returnType="any" output="no">
    <cfargument name="size" type="numeric" required="false" default="16" hint="How many bytes should be used to generate the salt" />
    <cfargument name="type" type="string"  required="false" default="base64" hint="Should be either binary or base64" />
@@ -62,8 +64,6 @@
      }
     </cfscript>
 </cffunction>
-
-
 
 <cffunction name="genBase64Salt" access="private" returnType="string" output="no">
     <cfargument name="size" type="numeric" required="true"/>
@@ -85,6 +85,5 @@ http://weblogs.macromedia.com/cantrell/archives/2004/01/byte_arrays_and_1.html
      return bytes;
     </cfscript>
 </cffunction>
-
 
 </cfcomponent>
