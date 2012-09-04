@@ -1,7 +1,7 @@
 Once upon a time warp. . . .
 ====================
 
-In a galaxy very, very, very, very, far away, there lived an awesome being known as ... Virtix. He created a blog post called ["Look, Ma. No Password!" - Secure Hashing in ColdFusion](http://blog.mxunit.org/2009/06/look-ma-no-password-secure-hashing-in.html)
+In a galaxy very, very, very, very, far away, there lived an awesome being known as ... Virtix. He created a blog post called ["Look, Ma. No Password!" - Secure Hashing in ColdFusion](http://blog.mxunit.org/2009/06/look-ma-no-password-secure-hashing-in.html).
 
 Chapter Eleven
 ---------------------
